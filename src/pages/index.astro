@@ -33,7 +33,7 @@ const posts = (await getCollection("blog"))
       LOOP_VIDEOS.map(({ src, poster }, index) => (
         <video
           data-loop-video
-          src={src}
+          data-src={src}
           poster={poster}
           muted
           playsinline
@@ -75,22 +75,54 @@ const posts = (await getCollection("blog"))
       video.classList.toggle("invisible", index !== activeIndex)
     );
 
+  const getLoopVideos = (): HTMLVideoElement[] =>
+    Array.from(document.querySelectorAll<HTMLVideoElement>("[data-loop-video]"));
+
+  const prefersReducedMotion = (): boolean =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const retryPlayWhenAllowed = (video: HTMLVideoElement) => {
+    const retry = () => void video.play().catch(() => undefined);
+    video.addEventListener("canplay", retry, { once: true });
+    window.addEventListener("pointerdown", retry, { once: true, capture: true });
+  };
+
+  const playMuted = (video: HTMLVideoElement) => {
+    video.muted = true;
+    video.playsInline = true;
+    video.play().catch(() => retryPlayWhenAllowed(video));
+  };
+
   const playVideoAt = (videos: HTMLVideoElement[], index: number) => {
     videos[index].currentTime = 0;
     showOnlyVideoAt(videos, index);
-    void videos[index].play();
+    playMuted(videos[index]);
+  };
+
+  const resumeVisibleVideo = () => {
+    const visibleVideo = getLoopVideos().find(
+      (video) => !video.classList.contains("invisible")
+    );
+    const shouldResume =
+      visibleVideo !== undefined &&
+      visibleVideo.paused &&
+      document.visibilityState === "visible" &&
+      !prefersReducedMotion();
+
+    if (shouldResume) playMuted(visibleVideo);
+  };
+
+  const attachSource = (video: HTMLVideoElement) => {
+    const { src } = video.dataset;
+    if (src !== undefined && video.getAttribute("src") !== src) video.src = src;
   };
 
   const startLoop = () => {
-    const videos = Array.from(
-      document.querySelectorAll<HTMLVideoElement>("[data-loop-video]")
-    );
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
+    const videos = getLoopVideos();
 
-    if (videos.length === 0 || prefersReducedMotion) return;
+    if (videos.length === 0 || prefersReducedMotion()) return;
 
+    videos.forEach(attachSource);
     videos.forEach((video, index) =>
       video.addEventListener("ended", () =>
         playVideoAt(videos, getNextIndex(index, videos.length))
@@ -100,4 +132,8 @@ const posts = (await getCollection("blog"))
   };
 
   document.addEventListener("astro:page-load", startLoop);
+  document.addEventListener("visibilitychange", resumeVisibleVideo);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) resumeVisibleVideo();
+  });
 </script>
