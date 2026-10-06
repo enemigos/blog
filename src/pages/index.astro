@@ -1,35 +1,103 @@
 ---
-import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import { getCollection } from "astro:content";
 import "../styles/global.css";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-function myAge(): number {
-  const birth = new Date("2001-07-10" + "T00:00:00-03:00");
-  const now = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/Santiago" })
-  );
+const SITE_NAME = "reno (rené cáceres)";
+const SITE_BLURB = "colección de notas para mi familia y amigos.";
 
-  let age = now.getFullYear() - birth.getFullYear();
-  const monthDiff = now.getMonth() - birth.getMonth();
+const LOOP_VIDEOS = [
+  { src: "/video/mvi-6416.mp4", poster: "/video/mvi-6416-poster.jpg" },
+  { src: "/video/important.mp4", poster: undefined },
+  { src: "/video/img-0179.mp4", poster: undefined },
+];
 
-  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
-    age--;
-  }
+const formatMonthYear = (date: Date): string =>
+  date.toLocaleDateString("es-ES", { month: "numeric" }) +
+  ", " +
+  date.getFullYear();
 
-  return age;
-}
-
-const meContent = Object.values(
-  import.meta.glob("../content/me.md", { eager: true })
-);
-const { Content } = meContent[0];
+const posts = (await getCollection("blog"))
+  .filter((post) => !post.data.hidden)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
 ---
 
-<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
-  <article class="prose prose-xl text-balance space-y-8 mb-8">
-    <p>
-      {myAge()} años
-    </p>
-    <p><Content /></p>
-  </article>
+<BaseLayout title={SITE_NAME} description={SITE_BLURB}>
+  <header>
+    <h1>{SITE_NAME}</h1>
+    <p class="text-typography-200">{SITE_BLURB}</p>
+  </header>
+
+  <div class="relative aspect-video overflow-hidden rounded bg-foreground-300">
+    {
+      LOOP_VIDEOS.map(({ src, poster }, index) => (
+        <video
+          data-loop-video
+          src={src}
+          poster={poster}
+          muted
+          playsinline
+          preload="auto"
+          class:list={[
+            "absolute inset-0 size-full object-cover",
+            { invisible: index !== 0 },
+          ]}
+        />
+      ))
+    }
+  </div>
+
+  <section>
+    <h2 class="text-typography-200">colecciones</h2>
+    <ul>
+      {
+        posts.map((post) => (
+          <li>
+            <a href={`/${post.id}`} class="hover:text-primary">
+              {post.data.title}.{" "}
+              <time class="text-typography-200">
+                {formatMonthYear(post.data.pubDate)}
+              </time>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
 </BaseLayout>
+
+<script>
+  const getNextIndex = (currentIndex: number, total: number): number =>
+    (currentIndex + 1) % total;
+
+  const showOnlyVideoAt = (videos: HTMLVideoElement[], activeIndex: number) =>
+    videos.forEach((video, index) =>
+      video.classList.toggle("invisible", index !== activeIndex)
+    );
+
+  const playVideoAt = (videos: HTMLVideoElement[], index: number) => {
+    videos[index].currentTime = 0;
+    showOnlyVideoAt(videos, index);
+    void videos[index].play();
+  };
+
+  const startLoop = () => {
+    const videos = Array.from(
+      document.querySelectorAll<HTMLVideoElement>("[data-loop-video]")
+    );
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (videos.length === 0 || prefersReducedMotion) return;
+
+    videos.forEach((video, index) =>
+      video.addEventListener("ended", () =>
+        playVideoAt(videos, getNextIndex(index, videos.length))
+      )
+    );
+    playVideoAt(videos, 0);
+  };
+
+  document.addEventListener("astro:page-load", startLoop);
+</script>
