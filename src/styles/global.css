@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
 
 @font-face {
   font-family: "Novela";
@@ -17,7 +19,7 @@
   --color-primary: #1B7A61;
   --color-typography-100: #0E1511;
   --color-typography-200: #5F665D;
-  --font-sans: "Times New Roman", Times, serif;
+  --font-sans: "Newsreader Variable", "Times New Roman", Times, serif;
 }
 
 html, body {
