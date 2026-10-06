@@ -2,6 +2,7 @@
 title: "guru"
 description: "perdón, no puedo ser tu mentor"
 pubDate: "10 Nov 2025"
+hidden: true
 ---
 
 > este fue un mensaje que le envié a alguien por linkedin. ideas de otros, sueltas, en un mensaje largo
