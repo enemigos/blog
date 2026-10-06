@@ -1,15 +1,23 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-@import '@fontsource-variable/labrada/wght.css';
-@import '@fontsource-variable/labrada/wght-italic.css';
+
+@font-face {
+  font-family: "Novela";
+  src:
+    url("/fonts/novela-regular.woff2") format("woff2"),
+    url("/fonts/novela-regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme {
-  --color-foreground-100: #0E1511;
-  --color-foreground-300: #0F2E22;
-  --color-primary: #29A383;
-  --color-typography-100: #ECEEEC;
-  --color-typography-200: #767D74;
-  --font-sans: "Labrada Variable", sans-serif;
+  --color-foreground-100: #FAFAF7;
+  --color-foreground-300: #E8F0EB;
+  --color-primary: #1B7A61;
+  --color-typography-100: #0E1511;
+  --color-typography-200: #5F665D;
+  --font-sans: "Times New Roman", Times, serif;
 }
 
 html, body {
